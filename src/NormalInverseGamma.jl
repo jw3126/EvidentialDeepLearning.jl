@@ -10,6 +10,7 @@ import Flux
 ##### NormalInverseGamma
 ################################################################################
 export NIG
+export posterior_predictive
 export mean, var, logpdf
 
 """
@@ -88,4 +89,33 @@ function Statistics.var(nig::NIG)
     x  = Eσ²/ λ
     σ² =  Eσ² / (α-2)
     return (;x,σ²)
+end
+
+"""
+    posterior_predictive(nig::NIG)
+
+Return the posterior_predictive distribution, where the statistical
+model is the two parameter family `Normal(μ,σ²)` and the posterior is given by `nig`.
+"""
+function posterior_predictive(nig::NIG)
+    # https://en.wikipedia.org/wiki/Conjugate_prior
+    μ = nig.μ # mean
+    α = nig.α # 2α = nobs var
+    ν = nig.ν # nobs mean
+    β = nig.β # 2β = sum square dev
+    var = β * (ν+1) / (ν*α)  # taken from Wikipedia
+    studentνμσ(2α, μ, sqrt(var))
+end
+
+"""
+    studentνμσ(ν,μ,σ)
+
+Create a student t distributions with
+* ν degrees of freedom
+* μ location (= mean)
+* σ scale (≈ std deviation)
+"""
+function studentνμσ(ν,μ,σ)
+    d0 = TDist(ν)
+    LocationScale(μ,σ,d0)
 end
