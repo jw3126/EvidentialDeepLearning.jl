@@ -18,6 +18,13 @@ function nll(d,y;agg=mean)
     agg(-logpdf.(d,y))
 end
 
+"""
+
+    evidence_regularizer(d,y;agg=mean)
+
+This loss function penalizes values of `d` which have high evidence and high
+prediction error with respect to y.
+"""
 function evidence_regularizer(d,y;agg=mean)
     agg(evidence.(d) .* norm.(y .- predict.(d)))
 end

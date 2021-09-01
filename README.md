@@ -13,3 +13,4 @@ All the good ideas in this package are taken from:
 * [evidential-deep-learning](https://github.com/aamini/evidential-deep-learning)
 * [Evidential Deep Learning to Quantify Classification Uncertainty](https://arxiv.org/abs/1806.01768)
 * [Deep Evidential Regression](https://arxiv.org/abs/1910.02600)
+* [MIT 6.S191: Evidential Deep Learning and Uncertainty](https://www.youtube.com/watch?v=toTcf7tZK8c)
