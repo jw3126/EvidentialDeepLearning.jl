@@ -1,5 +1,5 @@
 module Losses
-using Statistics
+using Statistics: mean
 using Distributions: logpdf
 
 export nll
@@ -16,6 +16,10 @@ Negative log likelihood loss. Given by `agg(-logpdf.(d,y))`.
 """
 function nll(d,y;agg=mean)
     agg(-logpdf.(d,y))
+end
+
+function evidence_regularizer(d,y;agg=mean)
+    agg(evidence.(d) .* norm.(y .- predict.(d)))
 end
 
 end#module

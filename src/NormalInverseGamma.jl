@@ -21,12 +21,12 @@ export mean, var, logpdf
 struct NIG{T}
     "Sample mean."
     μ::T
-    "Number of pseudo observations of the mean. Called λ in wikipedia."
+    "Number of pseudo observations used to estimate μ. Wikipedia uses λ instead of ν."
     ν::T
-    "Half number of pseudo observations for the square deviations."
+    "Half number of pseudo observations used to estimate β."
     α::T
     "Half sum of square deviations from the mean."
-    β::T # 2β = square errors
+    β::T
     function NIG(μ, ν, α, β)
         mu, nu, alpha, beta = promote(μ, ν, α, β)
         T = typeof(nu)
@@ -68,11 +68,13 @@ function to_nig_sampletype(nt::NamedTuple)
 end
 
 function Distributions.logpdf(nig::NIG, pt)
-    (;x, σ²) = to_nig_sampletype(pt)
-    μ = nig.μ
-    λ = nig.ν
-    α = nig.α
-    β = nig.β
+    s = to_nig_sampletype(pt)
+    x  = s.x
+    σ² = s.σ²
+    μ  = nig.μ
+    λ  = nig.ν
+    α  = nig.α
+    β  = nig.β
     l = -(2β + λ*(x-μ)^2) / (2*σ²)
     logσ² = log(σ²)
     #return √(λ)       / √(2π*σ²)          * β^α / SPF.gamma(α)       * inv(σ²)^(α+1) * exp(l)
@@ -119,3 +121,52 @@ function studentνμσ(ν,μ,σ)
     d0 = TDist(ν)
     LocationScale(μ,σ,d0)
 end
+
+function evidence(o::NIG)
+    2*o.ν + o.α
+end
+function predict(o::NIG)
+    # This is E[μ]
+    o.μ
+end
+
+"""
+    var_aleatoric(d)
+
+[Alleatoric](https://en.wikipedia.org/wiki/Uncertainty_quantification#Aleatoric_and_epistemic_uncertainty) variance of `predict(d)`. Also known as statistical uncertainty.
+
+See also [var_epistemic](@ref).
+"""
+function var_aleatoric end
+function var_aleatoric(o::NIG)
+    # E(σ²)
+    return o.β / (o.α - 1)
+end
+
+"""
+    std_aleatoric(o) = √(var_aleatoric(o))
+"""
+std_aleatoric(o) = √(var_aleatoric(o))
+
+"""
+    var_epistemic(d)
+
+[Epistemic](https://en.wikipedia.org/wiki/Uncertainty_quantification#Aleatoric_and_epistemic_uncertainty) variance of `predict(d)`. Also known as systematic uncertainty.
+
+See also [var_aleatoric](@ref).
+"""
+function var_epistemic end
+
+function var_epistemic(o::NIG)
+    # Var(μ)
+    o.β / ((o.α - 1) * o.ν)
+end
+
+"""
+    std_epistemic(o) = √(var_epistemic(o))
+"""
+std_epistemic(o) = √(var_epistemic(o))
+
+std_predict(o::NIG) = std(posterior_predictive(o))
+var_predict(o::NIG) = var(posterior_predictive(o))
+
