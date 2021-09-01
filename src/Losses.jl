@@ -1,6 +1,8 @@
 module Losses
 using Statistics: mean
 using Distributions: logpdf
+using EvidentialDeepLearning: evidence, predict, std_aleatoric
+using LinearAlgebra: norm
 
 export nll
 
@@ -26,7 +28,11 @@ This loss function penalizes values of `d` which have high evidence and high
 prediction error with respect to y.
 """
 function evidence_regularizer(d,y;agg=mean)
-    agg(evidence.(d) .* norm.(y .- predict.(d)))
+    function evi_reg(d,y)
+        err = y-predict(d)
+        evidence(d) * norm(err)
+    end
+    agg(evi_reg.(d, y))
 end
 
 end#module

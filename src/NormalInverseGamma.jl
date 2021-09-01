@@ -4,7 +4,7 @@ import Statistics
 import Distributions
 using StatsFuns: log2π
 using ArgCheck: @argcheck
-import Flux
+using NNlib: softplus
 
 ################################################################################
 ##### NormalInverseGamma
@@ -41,20 +41,21 @@ end
 
 
 function NIGs_from_4channels(arr::AbstractMatrix)
+    @argcheck mod(size(arr,1), 4) == 0
     nc,nb = size(arr)
-    @argcheck nc === 4
-    cmu    = view(arr, 1,:)
-    cnu    = view(arr, 2,:)
-    calpha = view(arr, 3,:)
-    cbeta  = view(arr, 4,:)
+    b = nc ÷ 4
+    cmu    = view(arr, (   1):(1b),:)
+    cnu    = view(arr, (1b+1):(2b),:)
+    calpha = view(arr, (2b+1):(3b),:)
+    cbeta  = view(arr, (3b+1):(4b),:)
     map(NIG_from_4channels, cmu, cnu, calpha, cbeta)
 end
 
 function NIG_from_4channels(cμ, cν, cα, cβ)
     μ = cμ
-    ν = Flux.softplus(cν)
-    α = Flux.softplus(cα) + 1
-    β = Flux.softplus(cβ)
+    ν = softplus(cν)
+    α = softplus(cα) + 1
+    β = softplus(cβ)
     NIG(μ,ν,α,β)
 end
 
@@ -118,8 +119,8 @@ Create a student t distributions with
 * σ scale (≈ std deviation)
 """
 function studentνμσ(ν,μ,σ)
-    d0 = TDist(ν)
-    LocationScale(μ,σ,d0)
+    d0 = Distributions.TDist(ν)
+    Distributions.LocationScale(μ,σ,d0)
 end
 
 function evidence(o::NIG)
@@ -167,6 +168,5 @@ end
 """
 std_epistemic(o) = √(var_epistemic(o))
 
-std_predict(o::NIG) = std(posterior_predictive(o))
+std_predict(o::NIG) = Statistics.std(posterior_predictive(o))
 var_predict(o::NIG) = var(posterior_predictive(o))
-
