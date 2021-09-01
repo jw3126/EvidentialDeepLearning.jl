@@ -1,6 +1,1 @@
-using EvidentialDeepLearning
-using Test
-
-@testset "EvidentialDeepLearning.jl" begin
-    # Write your tests here.
-end
+include("test_NormalInverseGamma.jl")

@@ -1,5 +1,5 @@
 module EvidentialDeepLearning
 
-# Write your package code here.
+include("NormalInverseGamma.jl")
 
 end
