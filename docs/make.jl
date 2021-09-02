@@ -1,5 +1,7 @@
 using EvidentialDeepLearning, Documenter, Literate
 
+ENV["GKS_ENCODING"] = "utf-8"
+
 DocMeta.setdocmeta!(EvidentialDeepLearning, :DocTestSetup, :(using EvidentialDeepLearning); recursive=true)
 
 inputdir = joinpath(@__DIR__, "..", "examples")
