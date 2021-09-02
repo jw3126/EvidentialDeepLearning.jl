@@ -1,4 +1,5 @@
 using SpecialFunctions: loggamma, digamma
+import Distributions: entropy
 using StaticArrays
 
 export Dirichlet, DirichletClassification, DirichletMultinomial, Multinomial
@@ -52,6 +53,18 @@ Given `P = Dirichlet(α)` compute the Kullback Leibler divergence with respect t
     `D_KL(P || Dirichlet(1,1,1...))`
 """
 function kl_uniform(d::Dirichlet)
+    # For any distribution P = p(x)dx
+    # And a uniform distribution U = u*dx where u = 1/vol(Ω)
+    # We have
+    # D_KL(P||U) = ∫ log(u/p(x)) p(x) dx
+    #            = ∫ log(u) p(x) dx - ∫log(p(x)) p(x) dx
+    #            = entropy(U)       - entropy(P)
+    #
+    # This also makes sense intuitively:
+    # D_KL(P||U) measures the extra price we pay for using the uniform coding scheme
+    # on P distributed data.
+    # In the uniform scheme, we pay always a flat rate of entropy(U) for any sample,
+    # while with the optimal code we only pay entropy(P) on average per sample
     entropy_uniform = -loggamma(nclasses(d))
     entropy_uniform - entropy(d)
 end
