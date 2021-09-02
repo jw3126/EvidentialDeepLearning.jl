@@ -27,7 +27,7 @@ makedocs(;
         "Home" => "index.md",
         "Tutorials" => ["Hello World" => "examples/hello_world.md",],
         # "Explanation" => [],
-        "Reference" => ["Docstrings" => "docstrings.jl"],
+        "Reference" => ["Docstrings" => "docstrings.md"],
         # "How-to guides" => [],
     ]
 )
