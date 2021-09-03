@@ -19,8 +19,8 @@ ArgCheck = "1, 2"
 DistributionsAD = "0.6"
 NNlib = "0.7"
 SpecialFunctions = "1"
-StatsFuns = "0.9"
 StaticArrays = "1"
+StatsFuns = "0.9"
 julia = "1.6"
 
 [extras]

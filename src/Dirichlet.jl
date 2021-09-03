@@ -2,8 +2,11 @@ using SpecialFunctions: loggamma, digamma
 import Distributions: entropy
 using StaticArrays
 
-export Dirichlet, DirichletClassification, DirichletMultinomial, Multinomial
+export Dirichlet, DirichletClassifier, Categorical
 
+################################################################################
+##### Dirichlet
+################################################################################
 """
     Dirichlet{N,T}
 
@@ -22,9 +25,22 @@ function Base.show(io::IO, d::Dirichlet)
     print(io, "Dirichlet", d.α)
 end
 
-to_NTuple(::Val{N}, x::NTuple{N}) where {N} = x
-to_NTuple(::Val{N}, x::StaticVector{N}) where {N} = Tuple(x)
-to_NTuple(::Val{N}, itr) where {N} = NTuple{N}(itr)::NTuple{N}
+to_NTuple(::Val{n}, x::NTuple{n}) where {n} = x
+to_NTuple(::Val{n}, x::StaticVector{n}) where {n} = Tuple(x)
+to_NTuple(N::Val, itr) = to_NTuple_dynamic(N, itr)
+
+to_NTuple_dynamic(::Val{0}, itr) = ()
+to_NTuple_dynamic(::Val{1}, itr) = (first(itr),)
+function to_NTuple_dynamic(::Val{2}, itr)
+    x1,x2 = itr
+end
+function to_NTuple_dynamic(::Val{3}, itr)
+    x1,x2,x3 = itr
+end
+function to_NTuple_dynamic(::Val{4}, itr)
+    x1,x2,x3,x4 = itr
+end
+to_NTuple_dynamic(::Val{n}, itr) where {n} = NTuple{n}(itr)::NTuple{n}
 
 function Distributions.logpdf(d::Dirichlet{N}, x) where {N}
     x = to_NTuple(Val(N), x)
@@ -35,13 +51,35 @@ end
 
 """
 
-    DirichletClassification(Val(k))
+    DirichletClassifier(Val(k))
 
 Layer that takes a tensor of floats of size (k*n, b) and turns it into
 a tensor of Dirichlet distributions of size (n,b).
 """
-struct DirichletClassification{k}
+struct DirichletClassifier{k}
     K::Val{k}
+end
+
+
+val(::Val{k}) where {k} = k
+NClasses(::Type{DirichletClassifier{k}}) where {k} = Val(k)
+NClasses(o) = NClasses(typeof(o))
+function NClasses(T::Type)
+    error("""
+          NClasses(::Type{$T}) not implemented.
+          """)
+end
+nclasses(o) = val(NClasses(o))
+
+function (o::DirichletClassifier)(arr::AbstractMatrix)
+    @argcheck size(arr, 1) == nclasses(o)
+    K = NClasses(o)
+    rows = ntuple(K) do i
+        view(arr, i, :)
+    end
+    map(rows...) do args...
+        Dirichlet(softplus.(args)...)
+    end
 end
 
 """
@@ -69,7 +107,7 @@ function kl_uniform(d::Dirichlet)
     entropy_uniform - entropy(d)
 end
 
-nclasses(d::Dirichlet{N}) where {N} = N
+NClasses(::Type{<:Dirichlet{k}}) where {k} = Val(k)
 function Distributions.entropy(d::Dirichlet)
     k = nclasses(d)
     α = d.α
@@ -88,28 +126,34 @@ function Statistics.mean(d::Dirichlet)
     return a * d.α
 end
 
-struct DirichletMultinomial{N,T}
-    α::NTuple{N,T}
-end
-function predictive_posterior(d::Dirichlet)
-    DirichletMultinomial(d.α)
+predict(d::Dirichlet) = argmax(d.α)
+evidence(d::Dirichlet) = sum(d.α) - nclasses(d) # is this correct?
+
+################################################################################
+##### Categorical
+################################################################################
+struct Categorical{N,T}
+    p::NTuple{N,T} # Σpᵢ = 1 must hold
 end
 
-struct Multinomial{N,T}
-    p::NTuple{N,T} # p1...p1 Σpi = 1
+function posterior_predictive(o::Dirichlet)
+    Categorical(o.α ./ sum(o.α))
 end
+Base.@propagate_inbounds Distributions.logpdf(o::Categorical, i) = log(o.p[i])
+Base.@propagate_inbounds Distributions.pdf(o::Categorical, i)    = o.p[i]
 
 # conversion
 Distributions.Dirichlet(d::Dirichlet) = Distributions.Dirichlet(collect(d.α))
-Distributions.Multinomial(d::Multinomial) = Distributions.Multinomial(d.p)
-Distributions.DirichletMultinomial(d::DirichletMultinomial) = Distributions.DirichletMultinomial(d.α)
+Distributions.Categorical(d::Categorical) = Distributions.Categorical(d.p)
 
 for (D_EDL, D_Dist) in [
                         (:Dirichlet, :(Distributions.Dirichlet)),
-                        (:DirichletMultinomial, :(Distributions.DirichletMultinomial)),
-                        (:Multinomial, :(Distributions.Multinomial)),
+                        (:Categorical, :(Distributions.Categorical)),
                         ]
 
     @eval Base.convert(::Type{Distributions.Distribution}, d::$D_EDL) = Base.convert($D_Dist, d)
     @eval Base.convert(::Type{$D_Dist}, d::$D_EDL) = $D_Dist(d)
 end
+
+sampletype(::Type{Dirichlet{N,T}}) where {N,T} = T
+sampletype(::Type{Categorical{N,T}}) where {N,T} = T

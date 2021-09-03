@@ -10,9 +10,11 @@ using NNlib: softplus
 ##### NormalInverseGamma
 ################################################################################
 export NIG
-export NIGRegression
+export NIGRegressor
 export posterior_predictive
 export mean, var, logpdf
+export var_aleatoric, var_epistemic, var_predict
+export std_aleatoric, std_epistemic, std_predict
 
 """
     NIG(μ, ν, α, β)
@@ -44,11 +46,9 @@ end
 NormalInverseGamma regression layer. Takes a tensor of floats of size (4c, n) and
 outputs a tensor of NormalInverseGamma distributions of size (c,n).
 """
-struct NIGRegression end
+struct NIGRegressor end
 
-(o::NIGRegression)(x) = NIGs_from_4channels(x)
-
-function NIGs_from_4channels(arr::AbstractMatrix)
+function (o::NIGRegressor)(arr::AbstractMatrix)
     @argcheck mod(size(arr,1), 4) == 0
     nc,nb = size(arr)
     b = nc ÷ 4

@@ -27,11 +27,12 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Tutorials" => ["Hello World" => "examples/hello_world.md",],
+        "Tutorials" => ["Basic Regression" => "examples/basic_regression.md",],
         # "Explanation" => [],
         "Reference" => ["Docstrings" => "docstrings.md"],
         # "How-to guides" => [],
-    ]
+    ],
+    strict=false,
 )
 
 deploydocs(;
