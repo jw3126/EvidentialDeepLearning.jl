@@ -41,7 +41,7 @@ end
 
 """
 
-    dirichlet_sos(d, y; agg=mean, λ)
+    dirichlet_sos(d, y)
 
 Regularized sum of squares loss for dirichlet classification. Described in $(REF_SKK2018).
 """
@@ -51,11 +51,10 @@ function dirichlet_sos(ds, labels::AbstractVector; λ)
     T = sampletype(eltype(ds))
     ret = float(zero(T))
     for (d, label) in zip(ds, labels)
-        # https://github.com/aamini/evidential-deep-learning/blob/d1d8e395fb083308d14fa92c5ce766e97b2a066a/evidential_deep_learning/losses/discrete.py#L28
-        d̂ = Dirichlet(setindex(d.α, one(T), label))
-        ret += sos(d,label) + λ * kl_uniform(d̂)
+        α̃ = setindex(d.α, one(T), label) # remove non-misleading evidence
+        ret += sos(d,label) + λ * kl_uniform(Dirichlet(α̃))
     end
-    return ret
+    return ret/length(labels)
 end
 
 function sos(d::Dirichlet{N}, label::Integer) where {N}
@@ -63,5 +62,5 @@ function sos(d::Dirichlet{N}, label::Integer) where {N}
     S = sum(α)
     m = α./S
     mse = (m[label] - 1)^2 - m[label]^2 + sum(abs2, m)
-    mse + sum(α .* (S .- α) ./ (S .^2 .* S .+ 1))
+    mse + sum(var(d))
 end

@@ -3,7 +3,7 @@ using Test
 using EvidentialDeepLearning
 const EDL = EvidentialDeepLearning
 import Distributions; const DI = Distributions
-using Distributions: logpdf, entropy, Uniform
+using Distributions: logpdf, entropy, Uniform, var
 using SpecialFunctions: loggamma, digamma
 
 @testset "Against Distributions" begin
@@ -26,6 +26,7 @@ using SpecialFunctions: loggamma, digamma
         p = p / sum(p)
         @test logpdf(d_dist, p) ≈ logpdf(d_edl, p)
         @test entropy(d_dist) ≈ entropy(d_edl)
+        @test var(d_dist) ≈ var(d_edl)
         if EDL.nclasses(d_edl) == 1
             @test EDL.kl_uniform(d_edl) == 0
         else

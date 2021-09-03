@@ -25,6 +25,15 @@ function Base.show(io::IO, d::Dirichlet)
     print(io, "Dirichlet", d.α)
 end
 
+function Statistics.var(d::Dirichlet)
+    # var is the diagonal of the cov matrix
+    # this is the convention from Distributions.jl
+    α = d.α
+    S = sum(α)
+    m = α./S
+    SVector(α .* (S .- α) ./ (S .^2 .* (S .+ 1)))
+end
+
 to_NTuple(::Val{n}, x::NTuple{n}) where {n} = x
 to_NTuple(::Val{n}, x::StaticVector{n}) where {n} = Tuple(x)
 to_NTuple(N::Val, itr) = to_NTuple_dynamic(N, itr)
