@@ -28,10 +28,10 @@ end
 function Statistics.var(d::Dirichlet)
     # var is the diagonal of the cov matrix
     # this is the convention from Distributions.jl
-    α = d.α
+    α = SVector(d.α)
     S = sum(α)
     m = α./S
-    SVector(α .* (S .- α) ./ (S .^2 .* (S .+ 1)))
+    α .* (S .- α) ./ (S .^2 .* (S .+ 1))
 end
 
 to_NTuple(::Val{n}, x::NTuple{n}) where {n} = x
@@ -156,8 +156,9 @@ Distributions.Dirichlet(d::Dirichlet) = Distributions.Dirichlet(collect(d.α))
 Distributions.Categorical(d::Categorical) = Distributions.Categorical(d.p)
 
 for (D_EDL, D_Dist) in [
-                        (:Dirichlet, :(Distributions.Dirichlet)),
+                        (:Dirichlet  , :(Distributions.Dirichlet  )),
                         (:Categorical, :(Distributions.Categorical)),
+                        (:Normal     , :(Distributions.Normal     )),
                         ]
 
     @eval Base.convert(::Type{Distributions.Distribution}, d::$D_EDL) = Base.convert($D_Dist, d)

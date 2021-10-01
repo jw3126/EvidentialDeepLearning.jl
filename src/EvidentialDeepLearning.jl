@@ -14,6 +14,7 @@ function sampletype(T::Type)
 end
 
 include("NormalInverseGamma.jl")
+include("Normal.jl")
 include("Dirichlet.jl")
 include("losses.jl")
 

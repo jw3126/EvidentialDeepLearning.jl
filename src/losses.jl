@@ -2,6 +2,7 @@ using Statistics: mean
 using Distributions: logpdf
 using EvidentialDeepLearning: evidence, predict, std_aleatoric
 using LinearAlgebra: norm
+using Statistics: var
 
 export nll
 
@@ -51,16 +52,24 @@ function dirichlet_sos(ds, labels::AbstractVector; λ)
     T = sampletype(eltype(ds))
     ret = float(zero(T))
     for (d, label) in zip(ds, labels)
-        α̃ = setindex(d.α, one(T), label) # remove non-misleading evidence
-        ret += sos(d,label) + λ * kl_uniform(Dirichlet(α̃))
+        d̃ = remove_non_misleading_evidence(d̃)
+        ret += sos(d,label) + λ * kl_uniform(Dirichlet(d̃))
     end
     return ret/length(labels)
 end
+
+function remove_non_misleading_evidence(d::Dirichlet, label::Integer)
+    T = sampletype(d)
+    Dirichlet(setindex(d.α, one(T), label))
+end
+
+
 
 function sos(d::Dirichlet{N}, label::Integer) where {N}
     α = d.α
     S = sum(α)
     m = α./S
     mse = (m[label] - 1)^2 - m[label]^2 + sum(abs2, m)
-    mse + sum(var(d))
+    sum_var = sum(α .* (S .- α) ./ (S .^2 .* (S .+ 1)))
+    mse + sum_var
 end

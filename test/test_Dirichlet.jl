@@ -70,4 +70,9 @@ end
 
 end
 
+@testset "remove_non_misleading_evidence" begin
+    EDL.remove_non_misleading_evidence(Dirichlet(1,2), 2) === Dirichlet(1,1)
+    EDL.remove_non_misleading_evidence(Dirichlet(1f0,0.1f0, 3f0), 2) === Dirichlet(1f0,1f0,3f0)
+end
+
 end#module
